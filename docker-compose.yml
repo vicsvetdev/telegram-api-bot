@@ -1,0 +1,36 @@
+name: telegram-bot-api
+
+services:
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:10.3
+    restart: unless-stopped
+    environment:
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID:?set TELEGRAM_API_ID in .env}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH:?set TELEGRAM_API_HASH in .env}
+      # --local: uploads up to 2000 MB, getFile returns absolute paths on disk.
+      TELEGRAM_LOCAL: "1"
+      # Uploads are written here in full before being sent to Telegram. Keep
+      # them on the data volume instead of the container's writable layer.
+      TELEGRAM_TEMP_DIR: /var/lib/telegram-bot-api/temp
+      # Uncomment to enable the stats page on port 8082 (never publish it).
+      #TELEGRAM_STAT: "1"
+    volumes:
+      - data:/var/lib/telegram-bot-api
+    # No ports: the server has no auth beyond bot tokens. Bots reach it on the
+    # shared network as http://telegram-bot-api:8081.
+    networks:
+      - telegram-bot-api
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  data:
+
+networks:
+  # Shared with every bot stack; create it once with
+  # `docker network create telegram-bot-api`.
+  telegram-bot-api:
+    external: true
